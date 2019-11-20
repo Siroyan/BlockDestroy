@@ -3,27 +3,33 @@ float speed = 5.0;
 Bar bar;
 Ball ball;
 Block[] blocks = new Block[9];
+Wall[] walls = new Wall[4];
 
 void setup() {
 	size(600, 800);
 	smooth();
-	frameRate(120);
+	frameRate(300);
 
 	bar = new Bar(250);
 
 	ball = new Ball(width/2, height/2);
 
-	blocks[0] = new Block(37.5, 25);
-	blocks[1] = new Block(225, 25);
-	blocks[2] = new Block(412.5, 25);
+	blocks[0] = new Block(37.5, 25, 0);
+	blocks[1] = new Block(225, 25, 0);
+	blocks[2] = new Block(412.5, 25, 0);
 
-	blocks[3] = new Block(37.5, 100);
-	blocks[4] = new Block(225, 100);
-	blocks[5] = new Block(412.5, 100);
+	blocks[3] = new Block(37.5, 100, 1);
+	blocks[4] = new Block(225, 100, 1);
+	blocks[5] = new Block(412.5, 100, 1);
 	
-	blocks[6] = new Block(37.5, 175);
-	blocks[7] = new Block(225, 175);
-	blocks[8] = new Block(412.5, 175);	
+	blocks[6] = new Block(37.5, 175, 2);
+	blocks[7] = new Block(225, 175, 2);
+	blocks[8] = new Block(412.5, 175, 2);
+
+	walls[0] = new Wall(0, 0, width, 1);
+	walls[1] = new Wall(width, 0, 1, height);
+	walls[2] = new Wall(0, height, width, 1);
+	walls[3] = new Wall(0, 0, 1, height);
 }
 
 void draw() {
@@ -38,6 +44,11 @@ void draw() {
 		blocks[i].display();
 	}
 
+	/* ボールがバーに触れているとき反射 */
+	if(bar.isTouchedByBall(ball.getX(), ball.getY())) {
+		ball.refrectAtX();
+	}
+
 	/* ボールがブロックに触れているとき反射 */
 	for(int i = 0; i < blocks.length; i++){
 		/* ブロックに当たっている？ */
@@ -46,13 +57,32 @@ void draw() {
 			switch (blocks[i].getTouchedWall(ball.getX(), ball.getY())) {
 				case 1:
 					ball.refrectAtY();
-					ball.update();
 					blocks[i].reduceDurability();
+					println("case1");
 					break;
 				case 2:
 					ball.refrectAtX();
-					ball.update();
 					blocks[i].reduceDurability();
+					println("case2");
+					break;
+			}
+		}
+	}
+
+	for(int i = 0; i < walls.length; i++) {
+		if(walls[i].isTouchedByBall(ball.getX(), ball.getY())) {
+			switch (i) {
+				case 0:
+					ball.refrectAtX();
+					break;
+				case 1:
+					ball.refrectAtY();
+					break;
+				case 2:
+					ball.refrectAtX();
+					break;
+				case 3:
+					ball.refrectAtY();
 					break;
 			}
 		}
@@ -64,19 +94,23 @@ void draw() {
 
 class Block {
 	float x, y;
-	float durability = 5;
+	float hue;
+	float width = 150, height = 50;
+	float durability = 3;
 
-	Block(float _x, float _y){
+	Block(float _x, float _y, int _hue){
 		x = _x;
 		y = _y;
+		hue = _hue;
 	}
 
 	boolean isTouchedByBall(float ballX, float ballY) {
 		/* 耐久地が0の場合当たり判定を消す */
 		if(durability != 0) {
 			/* ボールがブロック(縦横+1pxずつ)の範囲内に存在するか */
-			if(this.x - 1 <= ballX && ballX <= this.x + 151){
-				if(this.y - 1 <= ballY && ballY <= this.y + 51){
+			if(this.x - 1 <= ballX && ballX <= this.x + width + 1){
+				if(this.y - 1 <= ballY && ballY <= this.y + height + 1){
+					println("abc");
 					return true;
 				}
 			}
@@ -86,13 +120,13 @@ class Block {
 
 	/* 自分にボールが当たっているかを確認 */
 	int getTouchedWall(float ballX, float ballY) {
-		if(this.x - 1 == ballX || this.x + 151 == ballX){
-			if(this.y -1  <= ballY && ballY <= this.y + 51){
+		if(this.x - 1 == ballX || this.x + width + 1 == ballX){
+			if(this.y -1  <= ballY && ballY <= this.y + height + 1){
 				return 1;
 			}
 		}
-		if(this.y - 1 == ballY || this.y + 51 == ballY){
-			if(this.x -1  <= ballX && ballX <= this.x + 151){
+		if(this.y - 1 == ballY || this.y + height + 1 == ballY){
+			if(this.x - 1 <= ballX && ballX <= this.x + width + 1){
 				return 2;
 			}
 		}
@@ -106,13 +140,18 @@ class Block {
 
 	/* ブロックを描画 */
 	void display() {
-		fill(#00ffff);
-		rect(x, y, 150, 50);
+		if(durability != 0){
+			colorMode(HSB, 3, 100, 100);
+			fill(hue, 100, 100);
+			rect(x, y, width, height);
+			colorMode(RGB,256);
+		}
 	}
 }
 
 class Bar {
-	float x, speed = 5;
+	float x, y = 700, speed = 1;
+	float width = 100, height = 10;
 	
 	Bar(float _x){
 		x = _x;
@@ -127,19 +166,29 @@ class Bar {
 	}
 	void moveRight(){
 		x += speed;
-		if(width - 100 <= x) x = width - 100;
+		if(600 - 100 <= x) x = 600 - 100;
 	}
+
+	boolean isTouchedByBall(float ballX, float ballY) {
+		if(this.y - 1 == ballY){
+			if(this.x - 1 <= ballX && ballX <= this.x + width + 1){
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/* バーを描画 */
 	void display() {
 		fill(#00ff00);
-		rect(x, 700, 100, 10);
+		rect(x, y, 100, 10);
 	}
 }
 
 class Ball {
 	float x, y;
-	float vx = 0.25;
-	float vy = -0.5;
+	float vx = -1.0;
+	float vy = 1.0;
 
 	Ball(float _x, float _y){
 		x = _x;
@@ -163,8 +212,9 @@ class Ball {
 	/* ボールを表示 */
 	void display(){
 		imageMode(CENTER);
-		fill(#000000);
+		fill(#ffffff);
 		ellipse(x, y, 5, 5);
+		imageMode(CORNER);
 	}
 
 	float getX(){
@@ -173,5 +223,25 @@ class Ball {
 
 	float getY(){
 		return y;
+	}
+}
+
+/* フィールドの壁 */
+class Wall {
+	float x, y, width, height;
+	Wall(float _x, float _y, float _width, float _height){
+		x = _x;
+		y = _y;
+		width = _width;
+		height = _height;
+	}
+
+	boolean isTouchedByBall(float ballX, float ballY){
+		if(this.x <= ballX && ballX <= this.x + width) {
+			if(this.y <= ballY && ballY <= this.y + height) {
+				return true;
+			}
+		}
+		return false;
 	}
 }
