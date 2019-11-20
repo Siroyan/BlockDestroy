@@ -40,19 +40,21 @@ void draw() {
 
 	/* ボールがブロックに触れているとき反射 */
 	for(int i = 0; i < blocks.length; i++){
-		switch (blocks[i].getTouchedWall(ball.getX(), ball.getY())) {
-			case 0:
-				break;
-			case 1:
-				ball.refrectAtY();
-				ball.update();
-				println("case1");
-				break;
-			case 2:
-				ball.refrectAtX();
-				ball.update();
-				println("case2");
-				break;
+		/* ブロックに当たっている？ */
+		if(blocks[i].isTouchedByBall(ball.getX(), ball.getY())){
+			/* どの壁に当たっている？ */
+			switch (blocks[i].getTouchedWall(ball.getX(), ball.getY())) {
+				case 1:
+					ball.refrectAtY();
+					ball.update();
+					blocks[i].reduceDurability();
+					break;
+				case 2:
+					ball.refrectAtX();
+					ball.update();
+					blocks[i].reduceDurability();
+					break;
+			}
 		}
 	}
 
@@ -67,6 +69,19 @@ class Block {
 	Block(float _x, float _y){
 		x = _x;
 		y = _y;
+	}
+
+	boolean isTouchedByBall(float ballX, float ballY) {
+		/* 耐久地が0の場合当たり判定を消す */
+		if(durability != 0) {
+			/* ボールがブロック(縦横+1pxずつ)の範囲内に存在するか */
+			if(this.x - 1 <= ballX && ballX <= this.x + 151){
+				if(this.y - 1 <= ballY && ballY <= this.y + 51){
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/* 自分にボールが当たっているかを確認 */
