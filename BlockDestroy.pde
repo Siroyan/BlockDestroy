@@ -1,5 +1,3 @@
-float barX = 250.0;
-float speed = 5.0;
 Bar bar;
 Ball ball;
 Block[] blocks = new Block[9];
@@ -34,21 +32,10 @@ void setup() {
 
 void draw() {
 	background(255);
-
-	bar.display();
-
-	ball.update();
-	ball.display();
-
-	for(int i = 0; i < blocks.length; i++){
-		blocks[i].display();
-	}
-
 	/* ボールがバーに触れているとき反射 */
 	if(bar.isTouchedByBall(ball.getX(), ball.getY())) {
 		ball.refrectAtX();
 	}
-
 	/* ボールがブロックに触れているとき反射 */
 	for(int i = 0; i < blocks.length; i++){
 		/* ブロックに当たっている？ */
@@ -68,7 +55,6 @@ void draw() {
 			}
 		}
 	}
-
 	for(int i = 0; i < walls.length; i++) {
 		if(walls[i].isTouchedByBall(ball.getX(), ball.getY())) {
 			switch (i) {
@@ -88,15 +74,46 @@ void draw() {
 		}
 	}
 
-	if(keyPressed && key == 'a') bar.moveLeft();
-	if(keyPressed && key == 'd') bar.moveRight();
+	bar.setPosition(mouseX);
+	
+	/* ボール,バー,ブロックの再描画 */
+	bar.display();
+	ball.update();
+	ball.display();
+	for(int i = 0; i < blocks.length; i++){
+		blocks[i].display();
+	}
+
+	/* クリアしてるかチェック */
+	if(isCleard()) {
+		sendClearMsg();
+		noLoop();
+	}
+}
+
+boolean isCleard() {
+	for(int i = 0; i < blocks.length; i++) {
+		if(blocks[i].getDurability() != 0) {
+			return false;
+		}
+	}
+	return true;
+}
+
+void sendClearMsg() {
+	String msg = "Game Clear!";
+	textSize(50);
+	float msgWidth = textWidth(msg);
+	fill(#000000);
+	text(msg, (width/2)-(msgWidth/2), height/2);
+	println(msg);
 }
 
 class Block {
 	float x, y;
 	float hue;
 	float width = 150, height = 50;
-	float durability = 3;
+	float durability = 2;
 
 	Block(float _x, float _y, int _hue){
 		x = _x;
@@ -147,25 +164,23 @@ class Block {
 			colorMode(RGB,256);
 		}
 	}
+
+	float getDurability() {
+		return durability;
+	}
 }
 
 class Bar {
-	float x, y = 700, speed = 1;
+	float x, y = 700;
 	float width = 100, height = 10;
 	
 	Bar(float _x){
 		x = _x;
 	}
-	void changeSpeed(){
-		/* ToDo */
-		speed = 10;
-	}
-	void moveLeft(){
-		x -= speed;
+	
+	void setPosition(float _x) {
+		x = _x;
 		if(x <= 0) x = 0;
-	}
-	void moveRight(){
-		x += speed;
 		if(600 - 100 <= x) x = 600 - 100;
 	}
 
@@ -187,7 +202,7 @@ class Bar {
 
 class Ball {
 	float x, y;
-	float vx = -1.0;
+	float vx = 1.0;
 	float vy = 1.0;
 
 	Ball(float _x, float _y){
@@ -203,6 +218,14 @@ class Ball {
 		vx *= -1;
 	}
 
+	void changeVx() {
+
+	}
+
+	void changeVy() {
+
+	}
+
 	/* ボールの位置を更新 */
 	void update(){
 		x += vx;
@@ -213,7 +236,7 @@ class Ball {
 	void display(){
 		imageMode(CENTER);
 		fill(#ffffff);
-		ellipse(x, y, 5, 5);
+		ellipse(x, y, 10, 10);
 		imageMode(CORNER);
 	}
 
